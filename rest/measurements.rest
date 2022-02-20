@@ -11,3 +11,11 @@ GET http://localhost:8080/measurements/clear
 GET http://localhost:8080/books/read-all
 
 ###
+
+GET http://localhost:8080/books/read-all-fu
+
+###
+
+GET http://localhost:8080/books/random
+
+###

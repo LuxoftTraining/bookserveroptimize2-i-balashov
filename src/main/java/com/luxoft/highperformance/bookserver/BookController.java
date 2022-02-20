@@ -3,6 +3,8 @@ package com.luxoft.highperformance.bookserver;
 import com.luxoft.highperformance.bookserver.measure.Measure;
 import com.luxoft.highperformance.bookserver.model.Book;
 import com.luxoft.highperformance.bookserver.repositories.BookRepository;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -184,6 +186,35 @@ public class BookController {
         return bookSet;
     }
 
+    @Measure(value = "fastutil", warmup = 50)
+    @GetMapping("keywords4/{keywordsString}")
+    public Set<Book> getBookByTitleFastUtil(@PathVariable String keywordsString) {
+        String[] keywords = keywordsString.split(" ");
+
+        Set<Book> bookSet = null;
+        Object2ObjectOpenHashMap<String, IntSet> kwIndex = Book.kwIndex;
+        IntSet bookIds = null;
+        for (String keyword : keywords) {
+            if (kwIndex.containsKey(keyword)) {
+                IntSet integers = kwIndex.get(keyword);
+                if (bookIds == null) {
+                    bookIds = integers;
+                } else {
+                    bookIds.retainAll(integers);
+                }
+            } else {
+                return null;
+            }
+        }
+        if (bookIds != null && bookIds.size() > 0) {
+            bookSet = new HashSet<>();
+            for (int id: bookIds) {
+                bookSet.add(Book.bookIndex.get(id));
+            }
+        }
+        return bookSet;
+    }
+
     @GetMapping
     public List<Book> getBooks() {
         return bookRepository.findAll();
@@ -193,13 +224,21 @@ public class BookController {
     public void readAll() {
         List<Book> all = bookRepository.findAll();
         for (Book book: all) {
-            Book.initKeywords(book);
+            Book.initKeywords(book, false);
+        }
+    }
+
+    @GetMapping("read-all-fu")
+    public void readAllFastUtil() {
+        List<Book> all = bookRepository.findAll();
+        for (Book book: all) {
+            Book.initKeywords(book, true);
         }
     }
 
     @PostMapping
     public Book addBook(@RequestBody Book book) {
-        Book.initKeywords(book);
+        Book.initKeywords(book, false);
         return bookRepository.save(book);
     }
 

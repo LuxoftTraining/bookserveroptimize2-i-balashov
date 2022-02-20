@@ -43,7 +43,7 @@ class BookServerApplicationTests {
             String authorSurname = "AuthorSurname"+random.nextInt(BOOKS_AMOUNT);
             Book book = new Book();
             book.setTitle(title+" by "+authorName+authorSurname);
-            Book.initKeywords(book);
+            Book.initKeywords(book, false);
             bookRepository.save(book);
         }
     }
